@@ -1,5 +1,21 @@
 import torch
+from typing import List, Tuple
 NUM_CHANNELS = 10
+
+class Arc_Dataset(torch.utils.data.Dataset):
+    def __init__(self, inputs : List[torch.Tensor], outputs : List[torch.Tensor]):
+        self.inputs : List[torch.Tensor] = []
+        for input in inputs:
+            self.inputs.append(One_Hot_Encode(input))
+        self.outputs : List[torch.Tensor] = outputs
+        if len(self.inputs) != len(self.outputs):
+            raise Exception("Length of input and output tensors to Arc_Dataset are not equal")
+        
+    def __len__(self) -> int :
+        return len(self.inputs)
+    
+    def __getitem__(self, idx : int) -> Tuple[torch.Tensor, torch.Tensor] :
+        return self.inputs[idx], self.outputs[idx]
 
 def One_Hot_Encode(input : torch.Tensor) -> torch.Tensor :
     width : int = input.size(0)
