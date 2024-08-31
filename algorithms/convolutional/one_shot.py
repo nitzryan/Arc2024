@@ -30,7 +30,7 @@ class One_Shot_Convolutional_Model(nn.Module):
         super().__init__()
         self.conv = nn.Conv2d(NUM_CHANNELS, NUM_CHANNELS, kernel_size, padding=kernel_size // 2)
         
-    def forward(self, x):
+    def forward(self, x : torch.Tensor):
         x = x.permute(0,3,1,2)
         x = self.conv(x)
         return x
@@ -56,9 +56,10 @@ class One_Shot_Convolutional_Algorithm(Algorithm):
     def Solve_Puzzle(self,
                      train_inputs : List[torch.Tensor], 
                     train_outputs : List[torch.Tensor], 
-                    test_inputs : List[torch.Tensor]) -> Optional[torch.Tensor] :
+                    test_inputs : List[torch.Tensor],
+                    print_training : bool = False) -> Optional[torch.Tensor] :
         
-        # Map Training Data
+        # Map Data
         for n in range(len(train_inputs)):
             mapped_input, map = Map_General_Mapping(train_inputs[n], True)
             train_inputs[n] = mapped_input
@@ -77,10 +78,15 @@ class One_Shot_Convolutional_Algorithm(Algorithm):
             shuffle=True
         )
         # Train Model
+        # Re-zero from last training
+        with torch.no_grad():
+            for p in self.network.parameters():
+                p.zero_()
+                
         self.network.to(self.device)
         self.network.train()
-        optimizer = torch.optim.Adam(self.network.parameters(), lr=0.02)
-        for epoch in range(25):
+        optimizer = torch.optim.Adam(self.network.parameters(), lr=0.04)
+        for epoch in range(100):
             total_loss : float = 0
             num_batches : int = 0
             for input_data, output_data in train_generator:
@@ -93,31 +99,40 @@ class One_Shot_Convolutional_Algorithm(Algorithm):
                 optimizer.step()
                 total_loss += loss.item()
                 num_batches += 1
-            print(f"Epoch {epoch:3d} Loss={total_loss:.3f}")
+            if print_training:
+                print(f"Epoch {epoch:3d} Loss={total_loss:.3f}")
         
         # Sanity Check
         self.network.eval()
         one_hot_validate : torch.Tensor = One_Hot_Encode(train_inputs[0])
         model_output : torch.Tensor = self.network(one_hot_validate.unsqueeze(0))
-        model_decoded : torch.Tensor = One_Hot_Decode(model_output.squeeze(0))
-        # print(model_decoded)
-        # print(train_outputs[0])
+        model_output = model_output.squeeze(0)
+        model_output = model_output.permute(1,2,0)
+        model_decoded : torch.Tensor = One_Hot_Decode(model_output)
         
         # Validate Model
         self.network.eval()
         one_hot_validate : torch.Tensor = One_Hot_Encode(validation_input)
         model_output : torch.Tensor = self.network(one_hot_validate.unsqueeze(0))
-        model_decoded : torch.Tensor = One_Hot_Decode(model_output.squeeze(0))
+        model_output = model_output.squeeze(0)
+        model_output = model_output.permute(1,2,0)
+        model_decoded : torch.Tensor = One_Hot_Decode(model_output)
         if not torch.equal(model_decoded, validation_output):
             # print(model_decoded)
             # print(validation_output)
-            print("Solution Mismatch")
+            # print("Solution Mismatch")
             return None # If validation gives wrong answer, likely don't have right algorithm
         
         # Solve Test problems
-        # TODO : Need to refactor to handle multiple test cases
-        one_hot_validate : torch.Tensor = One_Hot_Encode(test_inputs[0])
-        model_output : torch.Tensor = self.network(one_hot_validate.unsqueeze(0))
-        model_decoded : torch.Tensor = One_Hot_Decode(model_output.squeeze(1))
+        solutions = []
+        for n in range(len(test_inputs)):
+            mapped_input, map = Map_General_Mapping(test_inputs[n], True)
+            
+            one_hot_validate : torch.Tensor = One_Hot_Encode(mapped_input)
+            model_output : torch.Tensor = self.network(one_hot_validate.unsqueeze(0))
+            model_output = model_output.squeeze(0)
+            model_output = model_output.permute(1,2,0)
+            model_decoded : torch.Tensor = One_Hot_Decode(model_output)
+            solutions.append(Unmap_General_Mapping(model_decoded, map))
         
-        return model_decoded
+        return solutions
