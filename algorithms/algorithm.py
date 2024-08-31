@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from algorithms.puzzle_mappings import Map_General_Mapping, Unmap_General_Mapping, Apply_Map
 from algorithms.encodings import Arc_Dataset, NUM_CHANNELS, One_Hot_Encode, One_Hot_Decode
 
@@ -22,20 +22,22 @@ class Algorithm:
                  network : nn.Module,
                  lr : float,
                  num_epochs : int,
-                 device : torch.device):
+                 device : torch.device,
+                 id : str):
         self.map_type = map_type
         self.network = network
         self.lr = lr
         self.num_epochs = num_epochs
         self.device = device
-        pass
+        self.id = id
     
     # This function is meant to be overridden
     def Solve_Puzzle(self,
                      train_inputs : List[torch.tensor], 
                     train_outputs : List[torch.tensor], 
                     test_inputs : List[torch.tensor],
-                    print_training : bool = False) -> Optional[List[torch.Tensor]] :
+                    print_training : bool = False) -> Tuple[Optional[List[torch.Tensor]],
+                                                        Optional[str]]:
         
         # Map Data
         if self.map_type == 'general':
@@ -49,7 +51,7 @@ class Algorithm:
                 train_inputs[n] = mapped_input
                 train_outputs[n] = Apply_Map(train_outputs[n], map)
         else:
-            return None
+            return None, "Invalid Algorithm"
         
         # Load Training Data
         validation_input : torch.Tensor = train_inputs[-1]
@@ -105,7 +107,7 @@ class Algorithm:
             # print(model_decoded)
             # print(validation_output)
             # print("Solution Mismatch")
-            return None # If validation gives wrong answer, likely don't have right algorithm
+            return None, "Validation_Step" # If validation gives wrong answer, likely don't have right algorithm
         
         # Solve Test problems, given that validation was correct
         solutions = []
@@ -119,4 +121,4 @@ class Algorithm:
             model_decoded : torch.Tensor = One_Hot_Decode(model_output)
             solutions.append(Unmap_General_Mapping(model_decoded, map))
         
-        return solutions
+        return solutions, None
