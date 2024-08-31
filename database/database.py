@@ -1,6 +1,9 @@
 import sqlite3
 import os
 from typing import Optional
+import subprocess
+import sys
+import os
 
 _db : sqlite3.Connection
 
@@ -63,3 +66,15 @@ def Log_Puzzle_Result(puzzle_id : str, test_passed : bool, test_failed : bool) -
         _db.commit()
     except Exception as e:
         print(e)
+        
+def Open_Db_Browser(filename : str) -> None :
+    db_browser_path = os.getenv('DB_BROWSER_LOC')
+    if db_browser_path is None:
+        print("Environmental Variable DB_BROWSER_LOC not found")
+        return
+    
+    if sys.platform != 'win32':
+        print("System is not win32")
+        return
+    
+    subprocess.Popen([db_browser_path, filename])

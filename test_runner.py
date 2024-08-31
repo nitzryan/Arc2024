@@ -2,11 +2,12 @@ from tqdm import tqdm
 import json
 import torch
 from algorithms.convolutional.one_shot import One_Shot_Convolutional_Algorithm
-from database.database import Generate_DB
+from database.database import Generate_DB, Open_Db_Browser
 from test_dispatcher import Test_Dispatcher
 
 torch.set_printoptions(linewidth=1000, edgeitems=20)
-Generate_DB("database/test_results.db")
+db_filename = "database/test_results.db"
+Generate_DB(db_filename)
 a = One_Shot_Convolutional_Algorithm(5, torch.device("cpu"), "One_Shot_Convolutional_5")
 b = One_Shot_Convolutional_Algorithm(3, torch.device("cpu"), "One_Shot_Convolutional_3")
 c = One_Shot_Convolutional_Algorithm(7, torch.device("cpu"), "One_Shot_Convolutional_7")
@@ -45,3 +46,4 @@ with open("data/arc-agi_training_challenges.json") as easy_challenges:
         print(f"Successfully completed {successful_puzzles} out of {successful_puzzles + failed_puzzles} easy puzzles")
         print(f"Success rate of {successful_puzzles / (successful_puzzles + failed_puzzles) * 100:.1f}%")
     
+Open_Db_Browser(db_filename)
