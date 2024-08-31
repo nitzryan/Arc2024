@@ -2,16 +2,8 @@ from tqdm import tqdm
 import json
 import torch
 from typing import List, Tuple, Dict, Optional
-
-class Algorithm:
-    def __init__(self):
-        pass
-    
-    def Solve_Puzzle(self,
-                     train_inputs : List[torch.tensor], 
-                    train_outputs : List[torch.tensor], 
-                    test_inputs : List[torch.tensor]) -> Optional[torch.Tensor] :
-        return torch.tensor([[2,0,2],[0,0,0],[0,0,0]])
+from algorithms.algorithm import Algorithm
+from algorithms.convolutional.one_shot import One_Shot_Convolutional_Algorithm
 
 def Check_Solution(file, solution):
     with open(file) as solution_file:
@@ -25,21 +17,28 @@ def Test_Dispatcher(train_inputs : List[torch.tensor],
     success_found = False
     failure_found = False
     for algorithm in algorithms:
-        test_solution = algorithm.Solve_Puzzle(train_inputs, train_outputs, test_inputs)
-        if test_solution is not None:
-            algo_found_solution = False
+        test_solutions = algorithm.Solve_Puzzle(train_inputs, train_outputs, test_inputs)
+        if test_solutions is not None and len(test_solutions) == len(solutions):
+            algo_failed_test = False
+            algo_successful_test = False
             for i in range(solutions.size(0)):
                 solution = solutions[i]
-                if torch.equal(solution, test_solution):
-                    success_found = True
-                    algo_found_solution = True
-            if not algo_found_solution:
+                test_solution = test_solutions[i]
+                if not torch.equal(solution, test_solution):
+                    algo_failed_test = True
+                else:
+                    algo_successful_test = True
+            if algo_failed_test:
                 failure_found = True
+            elif algo_successful_test:
+                success_found = True
                 
                 
     return success_found and not failure_found
 
-a = Algorithm()
+torch.set_printoptions(linewidth=1000, edgeitems=20)
+a = One_Shot_Convolutional_Algorithm(5, torch.device("cpu"))
+
 with open("data/arc-agi_training_challenges.json") as easy_challenges:
     with open("data/arc-agi_training_solutions.json") as easy_solutions:
         challenges_json = json.load(easy_challenges)
@@ -48,6 +47,8 @@ with open("data/arc-agi_training_challenges.json") as easy_challenges:
         successful_puzzles = 0
         failed_puzzles = 0
         for problem in tqdm(challenges_json):
+            # if problem != '0962bcdd':
+            #     continue
             try:
                 train_inputs = []
                 train_outputs = []
@@ -66,7 +67,8 @@ with open("data/arc-agi_training_challenges.json") as easy_challenges:
                 else:
                     failed_puzzles += 1
             except Exception as e:
-                print(e)
+                pass
+                #print(e)
                 
         print(f"Successfully completed {successful_puzzles} out of {successful_puzzles + failed_puzzles} easy puzzles")
         print(f"Success rate of {successful_puzzles / (successful_puzzles + failed_puzzles) * 100:.1f}%")
