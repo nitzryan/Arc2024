@@ -14,6 +14,6 @@ class One_Shot_Convolutional_Model(nn.Module):
         return x
 
 class One_Shot_Convolutional_Algorithm(Algorithm):
-    def __init__(self, kernel_size : int, device : torch.device):
+    def __init__(self, kernel_size : int, device : torch.device, id : str):
         network : nn.Module = One_Shot_Convolutional_Model(kernel_size)
-        Algorithm.__init__(self, 'general', network, 0.04, 100, device)
+        Algorithm.__init__(self, 'general', network, 0.04, 100, device, id)
