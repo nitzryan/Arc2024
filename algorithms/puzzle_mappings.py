@@ -3,6 +3,8 @@ from typing import Tuple, Dict, List
 from enum import Enum
 from itertools import permutations
 
+MAX_GENERAL_COLORS = 5 # Includes background
+
 class Puzzle_Mapping(Enum):
     GENERAL = 1
     GENERAL_NO_BACKGROUND = 2
@@ -33,7 +35,7 @@ def Map_General_Mapping(puzzle : torch.Tensor,
         raise Exception("Function Not Implemented for hardcoding background")
     start_idx = 1
     num_colors = nextMappedIdx - start_idx
-    if num_colors >= 5:
+    if num_colors >= MAX_GENERAL_COLORS:
         raise Exception(f"Too Many Colors for Map_General_Mapping : {num_colors}")
     idx_orderings = permutations(range(start_idx, nextMappedIdx), num_colors)
     

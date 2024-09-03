@@ -9,7 +9,7 @@ from test_dispatcher import Test_Dispatcher
 torch.set_printoptions(linewidth=1000, edgeitems=20)
 db_filename = "database/test_results.db"
 Generate_DB(db_filename)
-device = torch.device("gpu")
+device = torch.device("cpu")
 a = One_Shot_Convolutional_Algorithm(5, Puzzle_Mapping.GENERAL, device, "One_Shot_Convolutional_Mapped_5")
 b = One_Shot_Convolutional_Algorithm(3, Puzzle_Mapping.GENERAL, device, "One_Shot_Convolutional_Mapped_3")
 c = One_Shot_Convolutional_Algorithm(7, Puzzle_Mapping.GENERAL, device, "One_Shot_Convolutional_Mapped_7")
@@ -20,7 +20,7 @@ g = One_Shot_Convolutional_Algorithm(7, Puzzle_Mapping.UNMAPPED, device, "One_Sh
 h = One_Shot_Convolutional_Algorithm(9, Puzzle_Mapping.UNMAPPED, device, "One_Shot_Convolutional_Unmapped_9")
 
 algorithms = [a,b,c,d,e,f,g,h]
-# algorithms = [e]
+algorithms = [a,e]
 with open("data/arc-agi_training_challenges.json") as easy_challenges:
     with open("data/arc-agi_training_solutions.json") as easy_solutions:
         challenges_json = json.load(easy_challenges)

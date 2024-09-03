@@ -1,13 +1,13 @@
 import torch
 from algorithms.algorithm import Algorithm
 from algorithms.encodings import NUM_CHANNELS
-from algorithms.puzzle_mappings import Puzzle_Mapping
+from algorithms.puzzle_mappings import Puzzle_Mapping, MAX_GENERAL_COLORS
 import torch.nn as nn 
     
 class One_Shot_Convolutional_Model(nn.Module):
-    def __init__(self, kernel_size : int):
+    def __init__(self, kernel_size : int, num_channels : int):
         super().__init__()
-        self.conv = nn.Conv2d(NUM_CHANNELS, NUM_CHANNELS, kernel_size, padding=kernel_size // 2)
+        self.conv = nn.Conv2d(num_channels, num_channels, kernel_size, padding=kernel_size // 2)
         
     def forward(self, x : torch.Tensor):
         x = x.permute(0,3,1,2)
@@ -16,5 +16,9 @@ class One_Shot_Convolutional_Model(nn.Module):
 
 class One_Shot_Convolutional_Algorithm(Algorithm):
     def __init__(self, kernel_size : int, puzzle_mapping : Puzzle_Mapping, device : torch.device, id : str):
-        network : nn.Module = One_Shot_Convolutional_Model(kernel_size)
+        if puzzle_mapping == Puzzle_Mapping.GENERAL:
+            num_channels = MAX_GENERAL_COLORS
+        elif puzzle_mapping == Puzzle_Mapping.UNMAPPED:
+            num_channels = NUM_CHANNELS
+        network : nn.Module = One_Shot_Convolutional_Model(kernel_size, num_channels)
         Algorithm.__init__(self, puzzle_mapping, network, 0.04, 100, device, id)
