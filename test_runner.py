@@ -2,17 +2,25 @@ from tqdm import tqdm
 import json
 import torch
 from algorithms.convolutional.one_shot import One_Shot_Convolutional_Algorithm
+from algorithms.puzzle_mappings import Puzzle_Mapping
 from database.database import Generate_DB, Open_Db_Browser
 from test_dispatcher import Test_Dispatcher
 
 torch.set_printoptions(linewidth=1000, edgeitems=20)
 db_filename = "database/test_results.db"
 Generate_DB(db_filename)
-a = One_Shot_Convolutional_Algorithm(5, torch.device("cpu"), "One_Shot_Convolutional_5")
-b = One_Shot_Convolutional_Algorithm(3, torch.device("cpu"), "One_Shot_Convolutional_3")
-c = One_Shot_Convolutional_Algorithm(7, torch.device("cpu"), "One_Shot_Convolutional_7")
-d = One_Shot_Convolutional_Algorithm(9, torch.device("cpu"), "One_Shot_Convolutional_9")
+device = torch.device("cpu")
+a = One_Shot_Convolutional_Algorithm(5, Puzzle_Mapping.GENERAL, device, "One_Shot_Convolutional_Mapped_5")
+b = One_Shot_Convolutional_Algorithm(3, Puzzle_Mapping.GENERAL, device, "One_Shot_Convolutional_Mapped_3")
+c = One_Shot_Convolutional_Algorithm(7, Puzzle_Mapping.GENERAL, device, "One_Shot_Convolutional_Mapped_7")
+d = One_Shot_Convolutional_Algorithm(9, Puzzle_Mapping.GENERAL, device, "One_Shot_Convolutional_Mapped_9")
+e = One_Shot_Convolutional_Algorithm(5, Puzzle_Mapping.UNMAPPED, device, "One_Shot_Convolutional_Unmapped_5")
+f = One_Shot_Convolutional_Algorithm(3, Puzzle_Mapping.UNMAPPED, device, "One_Shot_Convolutional_Unmapped_3")
+g = One_Shot_Convolutional_Algorithm(7, Puzzle_Mapping.UNMAPPED, device, "One_Shot_Convolutional_Unmapped_7")
+h = One_Shot_Convolutional_Algorithm(9, Puzzle_Mapping.UNMAPPED, device, "One_Shot_Convolutional_Unmapped_9")
 
+algorithms = [a,b,c,d,e,f,g,h]
+# algorithms = [a,e]
 with open("data/arc-agi_training_challenges.json") as easy_challenges:
     with open("data/arc-agi_training_solutions.json") as easy_solutions:
         challenges_json = json.load(easy_challenges)
@@ -21,7 +29,7 @@ with open("data/arc-agi_training_challenges.json") as easy_challenges:
         successful_puzzles = 0
         failed_puzzles = 0
         for problem in tqdm(challenges_json):
-            # if problem != '0962bcdd':
+            # if problem != '05269061':
             #     continue
             try:
                 train_inputs = []
@@ -34,7 +42,7 @@ with open("data/arc-agi_training_challenges.json") as easy_challenges:
                     test_inputs.append(torch.tensor(t["input"]))
                     
                 solutions = torch.tensor(solutions_json[problem])
-                solution_found = Test_Dispatcher(train_inputs, train_outputs, test_inputs, solutions, [a,b,c,d], problem)
+                solution_found = Test_Dispatcher(train_inputs, train_outputs, test_inputs, solutions, algorithms, problem)
                 if solution_found:
                     successful_puzzles += 1
                 else:
