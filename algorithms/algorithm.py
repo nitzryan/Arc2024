@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import List, Optional, Tuple
-from algorithms.puzzle_mappings import Map_General_Mapping, Unmap_General_Mapping, Apply_Map
+from algorithms.puzzle_mappings import Map_General_Mapping, Unmap_General_Mapping, Apply_Map, Puzzle_Mapping
 from algorithms.encodings import Arc_Dataset, NUM_CHANNELS, One_Hot_Encode, One_Hot_Decode
 
 def Puzzle_Loss(predictions : torch.Tensor, actual : torch.Tensor) -> torch.Tensor:
@@ -18,7 +18,7 @@ def Puzzle_Loss(predictions : torch.Tensor, actual : torch.Tensor) -> torch.Tens
 
 class Algorithm:
     def __init__(self,
-                 map_type : str,
+                 map_type : Puzzle_Mapping,
                  network : nn.Module,
                  lr : float,
                  num_epochs : int,
@@ -40,26 +40,33 @@ class Algorithm:
                                                         Optional[str]]:
         
         # Map Data
-        if self.map_type == 'general':
+        train_inputs_variants = []
+        train_outputs_variants = []
+        if self.map_type == Puzzle_Mapping.GENERAL:
             for n in range(len(train_inputs)):
-                mapped_input, map = Map_General_Mapping(train_inputs[n], True)
-                train_inputs[n] = mapped_input
-                train_outputs[n] = Apply_Map(train_outputs[n], map)
-        elif self.map_type == 'general_no_background':
+                general_mapping = Map_General_Mapping(train_inputs[n], True, False)
+                for mapped_input, map in general_mapping:
+                    train_inputs_variants.append(mapped_input)
+                    train_outputs_variants.append(Apply_Map(train_outputs[n], map))
+        elif self.map_type == Puzzle_Mapping.GENERAL_NO_BACKGROUND:
             for n in range(len(train_inputs)):
                 mapped_input, map = Map_General_Mapping(train_inputs[n], False)
                 train_inputs[n] = mapped_input
                 train_outputs[n] = Apply_Map(train_outputs[n], map)
+        elif self.map_type == Puzzle_Mapping.UNMAPPED:
+            for n in range(len(train_inputs)):
+                train_inputs_variants.append(train_inputs[n])
+                train_outputs_variants.append(train_outputs[n])
         else:
             return None, "Invalid Algorithm"
         
         # Load Training Data
-        validation_input : torch.Tensor = train_inputs[-1]
-        train_inputs = train_inputs[:-1]
-        validation_output : torch.Tensor = train_outputs[-1]
-        train_outputs = train_outputs[:-1]
+        validation_input : torch.Tensor = train_inputs_variants[-1]
+        train_inputs_variants = train_inputs_variants[:-1]
+        validation_output : torch.Tensor = train_outputs_variants[-1]
+        train_outputs_variants = train_outputs_variants[:-1]
         
-        train_dataset : Arc_Dataset = Arc_Dataset(train_inputs, train_outputs)
+        train_dataset : Arc_Dataset = Arc_Dataset(train_inputs_variants, train_outputs_variants)
         train_generator : torch.utils.data.DataLoader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=1, # Prevent issues with different shaped puzzles running concurrently
@@ -95,6 +102,7 @@ class Algorithm:
         # model_output = model_output.squeeze(0)
         # model_output = model_output.permute(1,2,0)
         # model_decoded : torch.Tensor = One_Hot_Decode(model_output)
+        # print(model_decoded)
         
         # Validate Model
         self.network.eval()
@@ -112,7 +120,13 @@ class Algorithm:
         # Solve Test problems, given that validation was correct
         solutions = []
         for n in range(len(test_inputs)):
-            mapped_input, map = Map_General_Mapping(test_inputs[n], True)
+            if self.map_type == Puzzle_Mapping.GENERAL:
+                mapped_input, map = Map_General_Mapping(test_inputs[n], True, True)[0]
+            elif self.map_type == Puzzle_Mapping.GENERAL_NO_BACKGROUND:
+                mapped_input, map = Map_General_Mapping(test_inputs[n], False)
+            elif self.map_type == Puzzle_Mapping.UNMAPPED:
+                mapped_input = test_inputs[n]
+                map = {0:0,1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9}
             
             one_hot_validate : torch.Tensor = One_Hot_Encode(mapped_input)
             model_output : torch.Tensor = self.network(one_hot_validate.unsqueeze(0))

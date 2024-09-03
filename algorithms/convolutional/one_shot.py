@@ -1,6 +1,7 @@
 import torch
 from algorithms.algorithm import Algorithm
 from algorithms.encodings import NUM_CHANNELS
+from algorithms.puzzle_mappings import Puzzle_Mapping
 import torch.nn as nn 
     
 class One_Shot_Convolutional_Model(nn.Module):
@@ -14,6 +15,6 @@ class One_Shot_Convolutional_Model(nn.Module):
         return x
 
 class One_Shot_Convolutional_Algorithm(Algorithm):
-    def __init__(self, kernel_size : int, device : torch.device, id : str):
+    def __init__(self, kernel_size : int, puzzle_mapping : Puzzle_Mapping, device : torch.device, id : str):
         network : nn.Module = One_Shot_Convolutional_Model(kernel_size)
-        Algorithm.__init__(self, 'general', network, 0.04, 100, device, id)
+        Algorithm.__init__(self, puzzle_mapping, network, 0.04, 100, device, id)

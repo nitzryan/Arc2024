@@ -1,6 +1,7 @@
 from database.database import Log_Test_Result, Log_Puzzle_Result
 from typing import List
 import torch
+import traceback
 from algorithms.algorithm import Algorithm
 
 def Test_Dispatcher(train_inputs : List[torch.Tensor], 
@@ -38,7 +39,7 @@ def Test_Dispatcher(train_inputs : List[torch.Tensor],
                 else:
                     Log_Test_Result(puzzle_id, algorithm.id, False, False, False, False, None, test_info)
         except Exception as e:
-            Log_Test_Result(puzzle_id, algorithm.id, False, False, False, False, e.__str__(), None)
+            Log_Test_Result(puzzle_id, algorithm.id, False, False, False, False, e.__str__() + f'\n{traceback.format_exc()}', None)
     
     Log_Puzzle_Result(puzzle_id, success_found, failure_found)            
                 
