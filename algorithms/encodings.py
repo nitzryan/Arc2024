@@ -18,21 +18,16 @@ class Arc_Dataset(torch.utils.data.Dataset):
         return self.inputs[idx], self.outputs[idx]
 
 def One_Hot_Encode(input : torch.Tensor, num_colors : int) -> torch.Tensor :
-    width : int = input.size(0)
-    height : int = input.size(1)
-    output : torch.Tensor = torch.zeros((width, height, num_colors))
-    for x in range(width):
-        for y in range(height):
-            one_hot = torch.zeros(num_colors)
-            val = input[x,y].item()
-            one_hot[val] = 1
-            output[x,y,:] = one_hot
-            
-    return output
+    return torch.nn.functional.one_hot(input, num_classes=num_colors).float()
 
 def One_Hot_Decode(input : torch.tensor, num_colors : int) -> torch.Tensor :
     width : int = input.size(0)
     height : int = input.size(1)
+    input = input.reshape(width * height, input.size(2))
+    output = torch.argmax(input, dim=1)
+    output = output.reshape(width, height)
+    return output
+    
     output : torch.Tensor = torch.zeros((width, height), dtype=int)
     for x in range(width):
         for y in range(height):

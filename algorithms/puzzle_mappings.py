@@ -70,7 +70,18 @@ def Unmap_General_Mapping(mapped_puzzle : torch.Tensor, mapping : Dict) -> torch
     return unmapped_puzzle
 
 def Apply_Map(puzzle : torch.Tensor, map : Dict) -> torch.Tensor :
+    width : int = puzzle.size(0)
+    height : int = puzzle.size(1)
+    puzzle = puzzle.reshape((width * height))
     mapped_puzzle = puzzle.clone()
+    
+    for key, value in map.items():
+        mapped_puzzle[puzzle == key] = value
+        
+    mapped_puzzle = mapped_puzzle.reshape((width, height))
+    #print(mapped_puzzle.shape)
+    return mapped_puzzle
+    
     for x in range(puzzle.size(0)):
         for y in range(puzzle.size(1)):
             val = puzzle[x,y].item()

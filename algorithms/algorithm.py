@@ -4,6 +4,9 @@ from typing import List, Optional, Tuple
 from algorithms.puzzle_mappings import Map_General_Mapping, Unmap_General_Mapping, Apply_Map, Puzzle_Mapping, MAX_GENERAL_COLORS
 from algorithms.encodings import Arc_Dataset, NUM_CHANNELS, One_Hot_Encode, One_Hot_Decode
 
+EARLY_STOPPING_LOSS = 0.01
+NO_IMPROVEMENT_STOP_EPOCHS = 5
+
 def Puzzle_Loss(predictions : torch.Tensor, actual : torch.Tensor) -> torch.Tensor:
     predictions = predictions.permute(0,2,3,1)
     # Reshape into form reqiuired by CrossEntropyLoss
@@ -83,6 +86,8 @@ class Algorithm:
         self.network.train()
         self.network = self.network.to(self.device)
         optimizer = torch.optim.Adam(self.network.parameters(), lr=self.lr)
+        prev_best = torch.inf
+        prev_best_epoch = 0
         for epoch in range(self.num_epochs):
             total_loss : float = 0
             num_batches : int = 0
@@ -98,6 +103,15 @@ class Algorithm:
                 num_batches += 1
             if print_training:
                 print(f"Epoch {epoch:3d} Loss={total_loss:.3f}")
+            # Exit early when solution is reached
+            if total_loss / len(train_inputs_variants) < EARLY_STOPPING_LOSS:
+                break
+            # Exit early when no longer improving
+            if total_loss < prev_best:
+                prev_best = total_loss
+                prev_best_epoch = epoch
+            elif prev_best_epoch + NO_IMPROVEMENT_STOP_EPOCHS <= epoch:
+                break
         
         # Sanity check for debugging
         # self.network.eval()

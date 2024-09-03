@@ -20,7 +20,7 @@ g = One_Shot_Convolutional_Algorithm(7, Puzzle_Mapping.UNMAPPED, device, "One_Sh
 h = One_Shot_Convolutional_Algorithm(9, Puzzle_Mapping.UNMAPPED, device, "One_Shot_Convolutional_Unmapped_9")
 
 algorithms = [a,b,c,d,e,f,g,h]
-algorithms = [a,e]
+# algorithms = [a,e]
 with open("data/arc-agi_training_challenges.json") as easy_challenges:
     with open("data/arc-agi_training_solutions.json") as easy_solutions:
         challenges_json = json.load(easy_challenges)
